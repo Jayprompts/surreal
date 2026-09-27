@@ -6,13 +6,13 @@
     "node": ">=24"
   },
   "workspaces": [
-    "api",
-    "packages/*"
+    "packages/*",
+    "api"
   ],
   "scripts": {
-    "dev:api": "npm run dev -w api",
-    "build": "npm run build --workspaces --if-present",
-    "typecheck": "npm run typecheck --workspaces --if-present",
+    "dev:api": "npm run build -w @surreal/shared && npm run dev -w api",
+    "build": "npm run build -w @surreal/shared && npm run build -w api",
+    "typecheck": "npm run build -w @surreal/shared && npm run typecheck --workspaces --if-present",
     "db:start": "supabase start",
     "db:stop": "supabase stop",
     "db:status": "supabase status",

@@ -1,5 +1,6 @@
 import type { ErrorRequestHandler, RequestHandler } from 'express';
 import { AppError } from '../utils/AppError.js';
+import { pgError } from '../utils/pgError.js';
 import { isProd } from '../config/env.js';
 
 export const notFound: RequestHandler = (req, _res, next) => {
@@ -13,10 +14,10 @@ function normalize(err: unknown): unknown {
     return new AppError(400, 'Invalid JSON body');
   }
 
-  // Postgres unique violation, e.g. two requests creating the same record at the same moment
-  if (typeof err === 'object' && err !== null && 'code' in err && err.code === '23505') {
-    return new AppError(409, 'That already exists');
-  }
+  // Postgres rules that held when two requests raced past our own checks
+  const pg = pgError(err);
+  if (pg?.code === '23505') return new AppError(409, 'That already exists');
+  if (pg?.code === '23P01') return new AppError(409, 'That range overlaps an active tier.', undefined, 'tier_overlap');
 
   // Standard HTTP errors from Express internals (413 body too large, …)
   if (typeof err === 'object' && err !== null && 'status' in err && typeof err.status === 'number') {

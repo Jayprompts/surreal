@@ -1,7 +1,16 @@
 import { auditLog } from '../db/schema.js';
 import type { Account, Executor } from '../db/types.js';
 
-export type AuditAction = 'account.block' | 'account.unblock' | 'account.role' | 'account.make_owner';
+export type AuditAction =
+  | 'account.block'
+  | 'account.unblock'
+  | 'account.role'
+  | 'account.make_owner'
+  | 'key.issue'
+  | 'key.grant'
+  | 'rule.update'
+  | 'tier.create'
+  | 'tier.update';
 
 type Entry = {
   actor: Account | null; // null = the system (scripts, scheduled jobs, IPN)

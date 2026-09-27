@@ -7,6 +7,22 @@ const envSchema = z.object({
   WEB_URL: z.url(),
   // Supabase project URL. Sign-in tokens are verified against its public keys; the API holds no Supabase secret.
   SUPABASE_URL: z.url(),
+
+  // Licence keys are stored as HMAC-SHA256(key, KEY_HASH_SECRET). Never change it in production:
+  // every existing key would stop matching.
+  KEY_HASH_SECRET: z.string().min(32, 'KEY_HASH_SECRET must be at least 32 characters'),
+  // AES-256-GCM key (32 bytes, base64) that holds a key's full text until its owner reveals it once.
+  KEY_ENCRYPTION_KEY: z
+    .string()
+    .refine((v) => Buffer.from(v, 'base64').length === 32, 'KEY_ENCRYPTION_KEY must be 32 bytes, base64 (openssl rand -base64 32)'),
+
+  // Outgoing email (key emails, and later transfer/donation emails). Local: Supabase's Mailpit on port 54325.
+  SMTP_HOST: z.string().min(1),
+  SMTP_PORT: z.coerce.number().int().positive(),
+  SMTP_SECURE: z.stringbool().default(false), // true for port 465 (TLS from the start)
+  SMTP_USER: z.string().optional(),
+  SMTP_PASS: z.string().optional(),
+  MAIL_FROM: z.string().min(3), // e.g. Surreal <no-reply@example.com>
 });
 
 const parsed = envSchema.safeParse(process.env);

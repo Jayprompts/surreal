@@ -28,6 +28,12 @@ jobs:
       WEB_URL: http://localhost:3000
       # Only its public signing keys are fetched, on the first signed-in request (none in CI yet).
       SUPABASE_URL: http://127.0.0.1:54321
+      # CI-only throwaway values (this run's database is deleted afterwards).
+      KEY_HASH_SECRET: ci-only-key-hash-secret-not-used-anywhere-else
+      KEY_ENCRYPTION_KEY: Y2ktb25seS1lbmNyeXB0aW9uLWtleS0zMi1ieXRlcyE=
+      SMTP_HOST: 127.0.0.1
+      SMTP_PORT: 2525
+      MAIL_FROM: Surreal CI <ci@surreal.local>
       MIGRATION_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/postgres
       DATABASE_URL: postgresql://surreal_api_ci:ci_only@localhost:5432/postgres
     steps:

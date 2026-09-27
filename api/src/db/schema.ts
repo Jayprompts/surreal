@@ -26,8 +26,8 @@ export type Features = { face: boolean; voice: boolean; voiceCloning: boolean };
 
 // A frozen copy of the rule a key or donation came from: editing rules later never changes what was issued.
 export type RuleSnapshot = {
-  ruleId: string;
-  type: 'new_account' | 'tier';
+  ruleId: string | null; // null for keys granted by an admin
+  type: 'new_account' | 'tier' | 'admin_grant';
   name: string;
   minUsd: string | null;
   maxUsd: string | null;
