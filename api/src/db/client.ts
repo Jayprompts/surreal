@@ -1,10 +1,11 @@
 import postgres from 'postgres';
 import { drizzle } from 'drizzle-orm/postgres-js';
 import { env } from '../config/env.js';
+import * as schema from './schema.js';
 
 // prepare: false keeps us compatible with Supabase's transaction pooler in production.
 export const sql = postgres(env.DATABASE_URL, { max: 10, prepare: false, connect_timeout: 10, onnotice: () => {} });
-export const db = drizzle(sql); // the schema is passed in here in Part B
+export const db = drizzle(sql, { schema });
 
 export async function connectDB(): Promise<void> {
   await sql`select 1`;

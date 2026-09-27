@@ -15,7 +15,12 @@
     "typecheck": "npm run typecheck --workspaces --if-present",
     "db:start": "supabase start",
     "db:stop": "supabase stop",
-    "db:status": "supabase status"
+    "db:status": "supabase status",
+    "db:generate": "npm run db:generate -w api",
+    "db:migrate": "npm run db:migrate -w api",
+    "db:local-user": "npm run db:local-user -w api",
+    "db:check": "npm run db:check -w api",
+    "db:studio": "npm run db:studio -w api"
   },
   "devDependencies": {
     "supabase": "^2.118.0"

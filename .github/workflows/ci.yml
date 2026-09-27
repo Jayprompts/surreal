@@ -1,0 +1,93 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch: # "Run workflow" button in the Actions tab
+
+jobs:
+  api:
+    name: API · typecheck, build, migrate, guard checks, health
+    runs-on: ubuntu-latest
+    services:
+      # A throwaway Postgres for this run only. Its credentials are CI-only, never used anywhere else.
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      NODE_ENV: test
+      PORT: 4300
+      WEB_URL: http://localhost:3000
+      MIGRATION_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/postgres
+      DATABASE_URL: postgresql://surreal_api_ci:ci_only@localhost:5432/postgres
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install
+        run: npm ci
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Build
+        run: npm run build
+
+      - name: Apply migrations
+        working-directory: api
+        run: node dist/scripts/migrate.js
+
+      - name: Create the API login (member of surreal_api)
+        working-directory: api
+        run: node dist/scripts/db-local-user.js
+
+      - name: Database guard checks
+        working-directory: api
+        run: node dist/scripts/db-check.js
+
+      - name: Start the API and check health
+        working-directory: api
+        run: |
+          node dist/server.js > server.log 2>&1 &
+          for i in $(seq 1 30); do
+            if curl -sf localhost:4300/api/health; then echo; exit 0; fi
+            sleep 1
+          done
+          cat server.log
+          exit 1
+
+  windows:
+    name: Windows · install, typecheck, build
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install
+        run: npm ci
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Build
+        run: npm run build

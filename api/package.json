@@ -10,7 +10,13 @@
     "dev": "tsx watch --env-file=.env src/server.ts",
     "build": "tsc",
     "start": "node --env-file=.env dist/server.js",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "tsx --env-file=.env src/scripts/migrate.ts",
+    "db:migrate:prod": "node --env-file=.env dist/scripts/migrate.js",
+    "db:local-user": "tsx --env-file=.env src/scripts/db-local-user.ts",
+    "db:check": "tsx --env-file=.env src/scripts/db-check.ts",
+    "db:studio": "drizzle-kit studio"
   },
   "dependencies": {
     "cors": "^2.8.6",
