@@ -16,13 +16,16 @@
     "db:migrate:prod": "node --env-file=.env dist/scripts/migrate.js",
     "db:local-user": "tsx --env-file=.env src/scripts/db-local-user.ts",
     "db:check": "tsx --env-file=.env src/scripts/db-check.ts",
-    "db:studio": "drizzle-kit studio"
+    "db:studio": "drizzle-kit studio",
+    "make-owner": "tsx --env-file=.env src/scripts/make-owner.ts",
+    "make-owner:prod": "node --env-file=.env dist/scripts/make-owner.js"
   },
   "dependencies": {
     "cors": "^2.8.6",
     "drizzle-orm": "^0.45.3",
     "express": "^5.2.1",
     "helmet": "^8.3.0",
+    "jose": "^6.2.12",
     "morgan": "^1.12.1",
     "postgres": "^3.4.9",
     "zod": "^4.6.5"

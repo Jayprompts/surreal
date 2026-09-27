@@ -20,7 +20,8 @@
     "db:migrate": "npm run db:migrate -w api",
     "db:local-user": "npm run db:local-user -w api",
     "db:check": "npm run db:check -w api",
-    "db:studio": "npm run db:studio -w api"
+    "db:studio": "npm run db:studio -w api",
+    "make-owner": "npm run make-owner -w api --"
   },
   "devDependencies": {
     "supabase": "^2.118.0"

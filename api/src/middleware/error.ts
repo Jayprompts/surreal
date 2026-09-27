@@ -41,6 +41,7 @@ export const errorHandler: ErrorRequestHandler = (rawErr, _req, res, _next) => {
     success: false,
     error: {
       message: isAppError ? err.message : 'Something went wrong',
+      ...(isAppError && err.code ? { code: err.code } : {}),
       ...(isAppError && err.details ? { details: err.details } : {}),
       ...(!isProd && !isAppError && err instanceof Error ? { stack: err.stack } : {}),
     },

@@ -26,6 +26,8 @@ jobs:
       NODE_ENV: test
       PORT: 4300
       WEB_URL: http://localhost:3000
+      # Only its public signing keys are fetched, on the first signed-in request (none in CI yet).
+      SUPABASE_URL: http://127.0.0.1:54321
       MIGRATION_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/postgres
       DATABASE_URL: postgresql://surreal_api_ci:ci_only@localhost:5432/postgres
     steps:
