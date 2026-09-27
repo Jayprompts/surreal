@@ -1,0 +1,58 @@
+@import 'tailwindcss';
+
+/* Surreal "dark studio" tokens. Text colours are checked for WCAG AA contrast on bg and surface. */
+@theme {
+  --color-bg: #0b0b10;
+  --color-surface: #15151d;
+  --color-surface-2: #1d1d27;
+  --color-border: #2a2a36;
+  --color-text: #f4f4f7;
+  --color-muted: #a1a1b5;
+  --color-faint: #7d7d92;
+
+  --color-violet: #8b5cf6;
+  --color-cyan: #22d3ee;
+  /* Violet for small text on cards (the brand violet is under 4.5:1 on surface) */
+  --color-violet-ink: #a78bfa;
+  /* Solid fills behind white text (4.5:1 or better) */
+  --color-primary: #7c3aed;
+  --color-primary-hover: #6d28d9;
+
+  --color-success: #34d399;
+  --color-warning: #fbbf24;
+  --color-danger: #f87171;
+
+  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, Menlo, monospace;
+}
+
+@layer base {
+  html {
+    color-scheme: dark;
+  }
+  body {
+    @apply bg-bg text-text font-sans antialiased;
+  }
+  :focus-visible {
+    @apply outline-2 outline-offset-2 outline-cyan;
+  }
+}
+
+@utility text-gradient {
+  background-image: linear-gradient(90deg, var(--color-violet), var(--color-cyan));
+  background-clip: text;
+  color: transparent;
+}
+
+@utility bg-gradient {
+  background-image: linear-gradient(135deg, var(--color-violet), var(--color-cyan));
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}

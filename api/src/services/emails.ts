@@ -5,7 +5,7 @@ import type { Mail } from './mailer.js';
 const day = new Intl.DateTimeFormat('en-GB', { dateStyle: 'long', timeZone: 'Africa/Lagos' });
 
 const featureList = (f: Features) =>
-  [f.face && 'face swap', f.voice && 'voice', f.voiceCloning && 'voice cloning'].filter(Boolean).join(', ');
+  [f.face && 'character look', f.voice && 'character voice', f.voiceCloning && 'custom voices'].filter(Boolean).join(', ');
 
 const layout = (body: string) => `<!doctype html>
 <html>

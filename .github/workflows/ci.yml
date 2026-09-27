@@ -6,9 +6,14 @@ on:
   pull_request:
   workflow_dispatch: # "Run workflow" button in the Actions tab
 
+# The website's public settings are baked in at build time. CI only builds it, so placeholders are enough.
+env:
+  NEXT_PUBLIC_SUPABASE_URL: http://127.0.0.1:54321
+  NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ci-placeholder
+
 jobs:
   api:
-    name: API · typecheck, build, migrate, guard checks, health
+    name: API + web · typecheck, lint, build, migrate, guard checks, health
     runs-on: ubuntu-latest
     services:
       # A throwaway Postgres for this run only. Its credentials are CI-only, never used anywhere else.
@@ -51,6 +56,9 @@ jobs:
 
       - name: Typecheck
         run: npm run typecheck
+
+      - name: Lint
+        run: npm run lint
 
       - name: Build
         run: npm run build

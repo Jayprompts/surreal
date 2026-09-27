@@ -18,6 +18,7 @@ export const getCurrentKey: RequestHandler = async (req, res) => {
   const [all, rule] = await Promise.all([accountKeys(account.id), getNewAccountRule()]);
   const current = all.find((k) => CURRENT_STATUSES.includes(k.status));
   const shown = current ?? all[0];
+  const canGetFreeKey = all.length === 0 && Boolean(rule?.active);
 
   res.json({
     success: true,
@@ -25,8 +26,13 @@ export const getCurrentKey: RequestHandler = async (req, res) => {
       key: shown ? toKeyView(shown) : null,
       hasCurrentKey: Boolean(current),
       // "Get free key" only for accounts that never had a key; "Donate for a key" once they have.
-      canGetFreeKey: all.length === 0 && Boolean(rule?.active),
+      canGetFreeKey,
       canDonate: all.length > 0 && !current,
+      // What "Get free key" would give, so the button can say it before it's pressed.
+      freeKeyOffer:
+        canGetFreeKey && rule
+          ? { goLives: rule.goLives, minutesPerGoLive: rule.minutesPerGoLive, expiryDays: rule.expiryDays, features: rule.features }
+          : null,
     },
   });
 };
