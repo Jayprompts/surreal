@@ -1,0 +1,109 @@
+name: Deploy
+
+# Runs after CI passes on main (or by hand from the Actions tab). A failed build uploads nothing,
+# so the live site keeps running the previous version.
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    env:
+      # Public values (GitHub → Settings → Secrets and variables → Actions → Variables), baked into the website.
+      NEXT_PUBLIC_SUPABASE_URL: ${{ vars.NEXT_PUBLIC_SUPABASE_URL }}
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ vars.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY }}
+      NEXT_PUBLIC_DOWNLOAD_URL: ${{ vars.NEXT_PUBLIC_DOWNLOAD_URL }}
+    steps:
+      - name: Checkout (the commit CI just tested)
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Check the production variables are set
+        run: |
+          if [ -z "$NEXT_PUBLIC_SUPABASE_URL" ] || [ -z "$NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY" ]; then
+            echo "❌ Set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY as repository variables"; exit 1
+          fi
+
+      - name: Install and build (shared, API, website)
+        run: |
+          npm ci
+          npm run build
+
+      # release/ mirrors the site folder on the server:
+      #   api/ (dist + migrations), packages/shared/, web-app/ (self-contained website), ecosystem.config.cjs
+      - name: Assemble release
+        run: |
+          mkdir -p release/packages/shared release/api release/web release/web-app
+          cp package.json package-lock.json ops/ecosystem.config.cjs release/
+          cp -R packages/shared/package.json packages/shared/dist release/packages/shared/
+          cp -R api/package.json api/dist api/drizzle release/api/
+          cp web/package.json release/web/
+          cp -R web/.next/standalone/. release/web-app/
+          cp -R web/.next/static release/web-app/web/.next/static
+          if [ -d web/public ]; then cp -R web/public release/web-app/web/public; fi
+
+      - name: Set up SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.DEPLOY_SSH_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          for i in 1 2 3; do
+            ssh-keyscan -T 30 -p "${{ secrets.DEPLOY_PORT }}" -H "${{ secrets.DEPLOY_HOST }}" >> ~/.ssh/known_hosts && break
+            sleep 5
+          done
+
+      # Never touches the server's api/.env, its installed packages, or Let's Encrypt files.
+      - name: Upload release
+        run: |
+          rsync -az --delete \
+            --exclude='/api/.env' \
+            --exclude='/node_modules' \
+            --exclude='/.well-known' \
+            -e "ssh -i ~/.ssh/deploy_key -p ${{ secrets.DEPLOY_PORT }}" \
+            release/ "${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}:${{ secrets.DEPLOY_PATH }}/"
+
+      - name: Install, migrate, restart and health-check
+        run: |
+          ssh -i ~/.ssh/deploy_key -p "${{ secrets.DEPLOY_PORT }}" "${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}" \
+            "bash -s -- '${{ secrets.DEPLOY_PATH }}'" <<'REMOTE'
+          set -eo pipefail
+          export NVM_DIR="$HOME/.nvm"
+          . "$NVM_DIR/nvm.sh"
+          cd "$1"
+
+          if [ ! -f api/.env ]; then echo "❌ api/.env is missing on the VPS"; exit 1; fi
+
+          npm ci --omit=dev --workspace @surreal/api --no-audit --no-fund
+          node --env-file=api/.env api/dist/scripts/migrate.js
+
+          pm2 startOrReload ecosystem.config.cjs --update-env
+          pm2 save
+
+          API_PORT=$(grep -E '^PORT=' api/.env | cut -d= -f2)
+          for i in $(seq 1 15); do
+            if curl -fsS "http://127.0.0.1:${API_PORT}/api/health" && curl -fsS -o /dev/null "http://127.0.0.1:3300/download"; then
+              echo; echo "✅ Surreal is live"; exit 0
+            fi
+            sleep 2
+          done
+          echo "❌ Health check failed — recent logs:"
+          pm2 logs surreal-api --lines 30 --nostream || true
+          pm2 logs surreal-web --lines 30 --nostream || true
+          exit 1
+          REMOTE

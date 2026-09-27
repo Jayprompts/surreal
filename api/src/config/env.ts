@@ -3,6 +3,8 @@ import { z } from 'zod';
 const envSchema = z.object({
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
   PORT: z.coerce.number().int().positive().default(4300),
+  // Production: 127.0.0.1, so only Nginx on the same server can reach the API port.
+  HOST: z.string().default('0.0.0.0'),
   DATABASE_URL: z.string().regex(/^postgres(ql)?:\/\//, 'DATABASE_URL must be a Postgres connection string'),
   WEB_URL: z.url(),
   // Supabase project URL. Sign-in tokens are verified against its public keys; the API holds no Supabase secret.

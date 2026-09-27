@@ -11,8 +11,8 @@ async function start() {
   try {
     await connectDB();
     stopJobs = startKeyExpiry();
-    server.listen(env.PORT, () => {
-      console.log(`🚀 Surreal API on http://localhost:${env.PORT} [${env.NODE_ENV}]`);
+    server.listen(env.PORT, env.HOST, () => {
+      console.log(`🚀 Surreal API on http://${env.HOST}:${env.PORT} [${env.NODE_ENV}]`);
     });
   } catch (err) {
     console.error('❌ Failed to start:', err);
